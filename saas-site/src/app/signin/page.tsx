@@ -1,4 +1,17 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { FormEvent } from 'react';
+
 export default function SignInPage() {
+  const router = useRouter();
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // Redirect to dashboard (authentication coming soon)
+    router.push('/dashboard');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
@@ -8,7 +21,7 @@ export default function SignInPage() {
             Welcome back! Please enter your credentials.
           </p>
 
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
