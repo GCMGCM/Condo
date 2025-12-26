@@ -38,13 +38,23 @@ export default function SiteHeader() {
               Get Started
             </Link>
 
-            <Link href="/signup" className="rounded-md border border-transparent px-3 py-2 text-sm bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+            <Link 
+              href="/signin" 
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
+            >
+              Sign in
+            </Link>
+
+            <Link 
+              href="/signup" 
+              className="rounded-md border border-transparent px-3 py-2 text-sm bg-white text-gray-900 hover:bg-gray-50 transition-colors"
+            >
               Sign up
             </Link>
             
             <Link
               href="/dashboard"
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
+              className="hidden sm:inline-flex rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
             >
               Dashboard
             </Link>
