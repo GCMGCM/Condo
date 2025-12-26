@@ -1,0 +1,113 @@
+// Prisma schema for SaaS services, orders, and support tickets
+// Using Clerk for auth: we store references to users by their Clerk user ID (string)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  priceCents  Int
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders Order[]
+}
+
+model Order {
+  id                       String      @id @default(cuid())
+  clerkUserId              String
+  serviceId                String
+  amountCents              Int
+  currency                 String      @default("usd")
+  status                   OrderStatus @default(PENDING)
+  stripePaymentIntentId    String?
+  stripeCheckoutSessionId  String?
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@index([clerkUserId])
+  @@index([serviceId])
+  @@index([status])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELED
+  REFUNDED
+}
+
+model Ticket {
+  id           String       @id @default(cuid())
+  clerkUserId  String
+  subject      String
+  status       TicketStatus @default(OPEN)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  messages TicketMessage[]
+
+  @@index([clerkUserId])
+  @@index([status])
+}
+
+model TicketMessage {
+  id            String     @id @default(cuid())
+  ticketId      String
+  senderClerkId String
+  role          SenderRole
+  content       String
+  createdAt     DateTime   @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId])
+  @@index([senderClerkId])
+}
+
+enum TicketStatus {
+  OPEN
+  PENDING
+  CLOSED
+}
+
+enum SenderRole {
+  USER
+  SUPPORT
+}
+
+model Staff {
+  clerkUserId String   @id
+  role        StaffRole @default(SUPPORT)
+  createdAt   DateTime @default(now())
+}
+
+enum StaffRole {
+  SUPPORT
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  fullName     String
+  passwordHash String
+  gdprConsent  Boolean  @default(false)
+  consentGivenAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
+}
