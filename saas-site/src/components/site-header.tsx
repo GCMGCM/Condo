@@ -1,6 +1,5 @@
 'use client';
 import Link from 'next/link';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
@@ -25,7 +24,6 @@ export default function SiteHeader() {
             </Link>
             <nav className="hidden md:flex items-center">
               <NavLink href="/">Home</NavLink>
-              <NavLink href="/services">Services</NavLink>
               <NavLink href="/about">About</NavLink>
               <NavLink href="/contact">Contact</NavLink>
               <NavLink href="/faq">FAQ</NavLink>
@@ -34,32 +32,22 @@ export default function SiteHeader() {
 
           <div className="flex items-center gap-3">
             <Link
-              href="/services"
+              href="/signup"
               className="hidden sm:inline-flex rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
             >
               Get Started
             </Link>
 
-            <SignedOut>
-              <Link href="/signup" className="rounded-md border border-transparent px-3 py-2 text-sm bg-white text-gray-900 hover:bg-gray-50 transition-colors">
-                Sign up
-              </Link>
-              <SignInButton mode="modal">
-                <button className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50">
-                  Sign in
-                </button>
-              </SignInButton>
-            </SignedOut>
-
-            <SignedIn>
-              <Link
-                href="/dashboard"
-                className="hidden sm:inline-flex rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
-              >
-                Dashboard
-              </Link>
-              <UserButton appearance={{ elements: { userButtonAvatarBox: 'h-8 w-8' } }} />
-            </SignedIn>
+            <Link href="/signup" className="rounded-md border border-transparent px-3 py-2 text-sm bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+              Sign up
+            </Link>
+            
+            <Link
+              href="/dashboard"
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
+            >
+              Dashboard
+            </Link>
           </div>
         </div>
       </div>
