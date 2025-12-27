@@ -30,6 +30,7 @@ export async function POST(req: Request) {
       id: user._id.toString(),
       email: user.email,
       fullName: user.fullName,
+      isAdmin: user.isAdmin || false,
     };
 
     const response = NextResponse.json({ user: userData }, { status: 200 });

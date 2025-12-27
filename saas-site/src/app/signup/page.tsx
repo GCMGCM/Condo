@@ -41,8 +41,13 @@ export default function SignUpPage() {
       });
 
       if (res.status === 201) {
-        // created — redirect to dummy dashboard
-        router.push('/dashboard');
+        // created — redirect based on user role
+        const data = await res.json();
+        if (data.user?.isAdmin) {
+          router.push('/backoffice');
+        } else {
+          router.push('/dashboard');
+        }
         return;
       }
 

@@ -39,8 +39,8 @@ export default function SiteHeader() {
     router.refresh();
   };
 
-  // Hide public header only on dashboard pages (dashboard has its own header)
-  if (pathname?.startsWith('/dashboard')) {
+  // Hide public header on dashboard and backoffice pages (they have their own headers)
+  if (pathname?.startsWith('/dashboard') || pathname?.startsWith('/backoffice')) {
     return null;
   }
 

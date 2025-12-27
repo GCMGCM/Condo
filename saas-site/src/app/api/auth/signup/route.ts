@@ -38,10 +38,14 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Create user (store minimal data, consent timestamp)
+    // Set admin flag for owner email
+    const isAdmin = email === 'marcondes.gustavo@gmail.com';
+    
     const userDoc = new User({
       email,
       fullName,
       passwordHash,
+      isAdmin,
       gdprConsent,
       consentGivenAt: new Date(),
     });
@@ -52,7 +56,8 @@ export async function POST(req: Request) {
     const userData = { 
       id: saved._id.toString(), 
       email: saved.email, 
-      fullName: saved.fullName 
+      fullName: saved.fullName,
+      isAdmin: saved.isAdmin || false,
     };
     
     const response = NextResponse.json({ user: userData }, { status: 201 });

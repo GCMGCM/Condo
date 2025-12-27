@@ -32,8 +32,12 @@ export default function SignInPage() {
         return;
       }
 
-      // Success - redirect to dashboard
-      router.push('/dashboard');
+      // Success - redirect based on user role
+      if (data.user?.isAdmin) {
+        router.push('/backoffice');
+      } else {
+        router.push('/dashboard');
+      }
       router.refresh();
     } catch (err) {
       setError('An error occurred. Please try again.');
