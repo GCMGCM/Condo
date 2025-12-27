@@ -2,10 +2,20 @@
 
 import { useEffect, useState } from 'react';
 
+interface SigninLog {
+  _id: string;
+  email: string;
+  fullName: string;
+  action: string;
+  ipAddress: string;
+  timestamp: string;
+}
+
 export default function BackofficePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [logs, setLogs] = useState<SigninLog[]>([]);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -14,6 +24,7 @@ export default function BackofficePage() {
   });
 
   useEffect(() => {
+    // Fetch profile data
     fetch('/api/user/profile')
       .then(res => res.json())
       .then(data => {
@@ -28,6 +39,16 @@ export default function BackofficePage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+
+    // Fetch recent signin logs
+    fetch('/api/admin/logs')
+      .then(res => res.json())
+      .then(data => {
+        if (data.logs) {
+          setLogs(data.logs);
+        }
+      })
+      .catch(err => console.error('Failed to load logs:', err));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -142,6 +163,39 @@ export default function BackofficePage() {
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
+      </div>
+
+      {/* Recent Sign-ins Section */}
+      <div className="mt-8 bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Sign-ins</h2>
+        <p className="text-sm text-gray-600 mb-4">Last 10 sign-in activities</p>
+        
+        {logs.length === 0 ? (
+          <p className="text-sm text-gray-500">No sign-in logs yet. Sign in to see your activity.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date & Time</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP Address</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {logs.map((log) => (
+                  <tr key={log._id}>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                      {new Date(log.timestamp).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {log.ipAddress}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
