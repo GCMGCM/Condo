@@ -14,8 +14,8 @@ export async function GET(req: NextRequest) {
 
     const session = JSON.parse(sessionCookie.value);
     
-    if (!session.isAdmin) {
-      return NextResponse.json({ message: 'Unauthorized - Admin access required' }, { status: 403 });
+    if (!session.isAdmin && !session.isSupportTeam) {
+      return NextResponse.json({ message: 'Unauthorized - Admin or Support Team access required' }, { status: 403 });
     }
 
     await connectToMongo();
