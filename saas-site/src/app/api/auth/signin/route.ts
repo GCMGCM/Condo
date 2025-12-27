@@ -1,9 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { connectToMongo } from '../../../../lib/mongoose';
 import User from '../../../../models/user';
+import UserLog from '../../../../models/user-log';
+import AdminLog from '../../../../models/admin-log';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const email = (body.email || '').trim().toLowerCase();
@@ -24,6 +26,16 @@ export async function POST(req: Request) {
     if (!isValid) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
+
+    // Log the signin action
+    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const LogModel = user.isAdmin ? AdminLog : UserLog;
+    await new LogModel({
+      email: user.email,
+      fullName: user.fullName,
+      action: 'signin',
+      ipAddress,
+    }).save();
 
     // Create session token (simple version - store user info in cookie)
     const userData = {

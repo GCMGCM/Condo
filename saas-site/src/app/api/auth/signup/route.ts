@@ -1,9 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { connectToMongo } from '../../../../lib/mongoose';
 import User from '../../../../models/user';
+import UserLog from '../../../../models/user-log';
+import AdminLog from '../../../../models/admin-log';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
@@ -51,6 +53,16 @@ export async function POST(req: Request) {
     });
 
     const saved = await userDoc.save();
+
+    // Log the signup action
+    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const LogModel = isAdmin ? AdminLog : UserLog;
+    await new LogModel({
+      email: saved.email,
+      fullName: saved.fullName,
+      action: 'signup',
+      ipAddress,
+    }).save();
 
     // Respond with created user (no sensitive data)
     const userData = { 
