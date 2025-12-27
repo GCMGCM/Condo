@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { connectToMongo } from '../../../../../lib/mongoose';
-import User from '../../../../../models/user';
+import { connectToMongo } from '../../../../lib/mongoose';
+import User from '../../../../models/user';
 
 export async function GET(req: NextRequest) {
   try {
