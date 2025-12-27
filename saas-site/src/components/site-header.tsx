@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface User {
   id: string;
@@ -22,6 +22,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 
 export default function SiteHeader() {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -38,8 +39,8 @@ export default function SiteHeader() {
     router.refresh();
   };
 
-  // Don't show public header if user is logged in (dashboard has its own header)
-  if (user) {
+  // Hide public header only on dashboard pages (dashboard has its own header)
+  if (pathname?.startsWith('/dashboard')) {
     return null;
   }
 
@@ -61,26 +62,45 @@ export default function SiteHeader() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/signup"
-              className="hidden sm:inline-flex rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
-            >
-              Get Started
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 transition-colors"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/signup"
+                  className="hidden sm:inline-flex rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+                >
+                  Get Started
+                </Link>
 
-            <Link 
-              href="/signin" 
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
-            >
-              Sign in
-            </Link>
+                <Link 
+                  href="/signin" 
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
+                >
+                  Sign in
+                </Link>
 
-            <Link 
-              href="/signup" 
-              className="rounded-md border border-transparent px-3 py-2 text-sm bg-white text-gray-900 hover:bg-gray-50 transition-colors"
-            >
-              Sign up
-            </Link>
+                <Link 
+                  href="/signup" 
+                  className="rounded-md border border-transparent px-3 py-2 text-sm bg-white text-gray-900 hover:bg-gray-50 transition-colors"
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
