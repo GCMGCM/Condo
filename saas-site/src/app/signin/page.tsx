@@ -33,7 +33,7 @@ export default function SignInPage() {
       }
 
       // Success - redirect based on user role
-      if (data.user?.isAdmin) {
+      if (data.user?.isAdmin || data.user?.isSupportTeam) {
         router.push('/backoffice');
       } else {
         router.push('/dashboard');

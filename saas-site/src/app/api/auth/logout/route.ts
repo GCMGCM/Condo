@@ -13,10 +13,10 @@ export async function POST(req: NextRequest) {
     if (sessionCookie) {
       const user = JSON.parse(sessionCookie.value);
       
-      // Log the signout action
+      // Log the signout action (admin and support team use AdminLog)
       await connectToMongo();
       const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-      const LogModel = user.isAdmin ? AdminLog : UserLog;
+      const LogModel = (user.isAdmin || user.isSupportTeam) ? AdminLog : UserLog;
       
       await new LogModel({
         email: user.email,

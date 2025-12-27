@@ -20,8 +20,8 @@ export default function BackofficeLayout({ children }: { children: React.ReactNo
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => {
-        if (!data.user || !data.user.isAdmin) {
-          // Not admin - redirect to dashboard or signin
+        if (!data.user || (!data.user.isAdmin && !data.user.isSupportTeam)) {
+          // Not admin or support team - redirect to dashboard or signin
           router.push(data.user ? '/dashboard' : '/signin');
         } else {
           setUser(data.user);
@@ -80,7 +80,7 @@ export default function BackofficeLayout({ children }: { children: React.ReactNo
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-gray-900">{user.fullName}</span>
-                  <span className="text-xs text-gray-500">Admin</span>
+                  <span className="text-xs text-gray-500">{user.isAdmin ? 'Admin' : 'Support Team'}</span>
                 </div>
               </div>
 

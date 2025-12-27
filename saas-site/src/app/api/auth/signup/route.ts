@@ -4,6 +4,7 @@ import { connectToMongo } from '../../../../lib/mongoose';
 import User from '../../../../models/user';
 import UserLog from '../../../../models/user-log';
 import AdminLog from '../../../../models/admin-log';
+import SupportInvite from '../../../../models/support-invite';
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,6 +40,10 @@ export async function POST(req: NextRequest) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // Check if user was invited as support team
+    const invite = await SupportInvite.findOne({ email, used: false });
+    const isSupportTeam = !!invite;
+    
     // Create user (store minimal data, consent timestamp)
     // Set admin flag for owner email
     const isAdmin = email === 'marcondes.gustavo@gmail.com';
@@ -48,15 +53,22 @@ export async function POST(req: NextRequest) {
       fullName,
       passwordHash,
       isAdmin,
+      isSupportTeam,
       gdprConsent,
       consentGivenAt: new Date(),
     });
 
     const saved = await userDoc.save();
 
-    // Log the signup action
+    // Mark invite as used if it exists
+    if (invite) {
+      invite.used = true;
+      await invite.save();
+    }
+
+    // Log the signup action (admin and support team use AdminLog)
     const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-    const LogModel = isAdmin ? AdminLog : UserLog;
+    const LogModel = (isAdmin || isSupportTeam) ? AdminLog : UserLog;
     await new LogModel({
       email: saved.email,
       fullName: saved.fullName,
@@ -70,6 +82,7 @@ export async function POST(req: NextRequest) {
       email: saved.email, 
       fullName: saved.fullName,
       isAdmin: saved.isAdmin || false,
+      isSupportTeam: saved.isSupportTeam || false,
     };
     
     const response = NextResponse.json({ user: userData }, { status: 201 });

@@ -9,6 +9,7 @@ const UserSchema = new Schema({
   mobileCountry: { type: String, default: '' },
   mobileNumber: { type: String, default: '' },
   isAdmin: { type: Boolean, default: false },
+  isSupportTeam: { type: Boolean, default: false },
   gdprConsent: { type: Boolean, default: false },
   consentGivenAt: { type: Date },
   createdAt: { type: Date, default: () => new Date() },

@@ -27,9 +27,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
-    // Log the signin action
+    // Log the signin action (admin and support team use AdminLog)
     const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-    const LogModel = user.isAdmin ? AdminLog : UserLog;
+    const LogModel = (user.isAdmin || user.isSupportTeam) ? AdminLog : UserLog;
     await new LogModel({
       email: user.email,
       fullName: user.fullName,
@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
       email: user.email,
       fullName: user.fullName,
       isAdmin: user.isAdmin || false,
+      isSupportTeam: user.isSupportTeam || false,
     };
 
     const response = NextResponse.json({ user: userData }, { status: 200 });

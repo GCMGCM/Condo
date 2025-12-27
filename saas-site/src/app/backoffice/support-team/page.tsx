@@ -1,4 +1,74 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
+interface Invite {
+  _id: string;
+  email: string;
+  fullName: string;
+  used: boolean;
+}
+
 export default function SupportTeamPage() {
+  const [invites, setInvites] = useState<Invite[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [formData, setFormData] = useState({ email: '', fullName: '' });
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    // Check if user is admin
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        setIsAdmin(data.user?.isAdmin || false);
+      });
+
+    // Fetch invites
+    fetch('/api/support-team/invite')
+      .then(res => res.json())
+      .then(data => {
+        if (data.invites) {
+          setInvites(data.invites);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage('');
+
+    try {
+      const res = await fetch('/api/support-team/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage('Team member invited successfully!');
+        setFormData({ email: '', fullName: '' });
+        setShowForm(false);
+        // Refresh invites
+        const invitesRes = await fetch('/api/support-team/invite');
+        const invitesData = await invitesRes.json();
+        if (invitesData.invites) {
+          setInvites(invitesData.invites);
+        }
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage(data.message || 'Failed to invite');
+      }
+    } catch (err) {
+      setMessage('An error occurred');
+    }
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-4">Support Team</h1>
@@ -6,36 +76,96 @@ export default function SupportTeamPage() {
         Manage support team members and their access levels.
       </p>
       
+      {message && (
+        <div className={`mb-4 p-3 rounded-md ${message.includes('success') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+          {message}
+        </div>
+      )}
+
       <div className="grid gap-6">
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Team Members</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white text-sm font-medium">
-                  ST
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Invites</h2>
+          {loading ? (
+            <p className="text-sm text-gray-500">Loading...</p>
+          ) : invites.length === 0 ? (
+            <p className="text-sm text-gray-500">No pending invites</p>
+          ) : (
+            <div className="space-y-4">
+              {invites.map((invite) => (
+                <div key={invite._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white text-sm font-medium">
+                      {invite.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{invite.fullName}</p>
+                      <p className="text-xs text-gray-500">{invite.email}</p>
+                    </div>
+                  </div>
+                  <span className="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800">
+                    Pending
+                  </span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Support Team Member</p>
-                  <p className="text-xs text-gray-500">support@example.com</p>
-                </div>
-              </div>
-              <span className="inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
-                Support
-              </span>
+              ))}
             </div>
-          </div>
+          )}
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Add New Team Member</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            Invite new support team members to help manage customer inquiries.
-          </p>
-          <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors">
-            Add Team Member
-          </button>
-        </div>
+        {isAdmin && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Add New Team Member</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Invite new support team members. They'll be able to access the backoffice when they sign up.
+            </p>
+            
+            {!showForm ? (
+              <button
+                onClick={() => setShowForm(true)}
+                className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+              >
+                Add Team Member
+              </button>
+            ) : (
+              <form onSubmit={handleInvite} className="space-y-4 max-w-md">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
+                    required
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+                  >
+                    Send Invite
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

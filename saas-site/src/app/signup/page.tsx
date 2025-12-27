@@ -43,7 +43,7 @@ export default function SignUpPage() {
       if (res.status === 201) {
         // created — redirect based on user role
         const data = await res.json();
-        if (data.user?.isAdmin) {
+        if (data.user?.isAdmin || data.user?.isSupportTeam) {
           router.push('/backoffice');
         } else {
           router.push('/dashboard');
