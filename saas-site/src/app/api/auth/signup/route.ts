@@ -49,8 +49,24 @@ export async function POST(req: Request) {
     const saved = await userDoc.save();
 
     // Respond with created user (no sensitive data)
-    const user = { id: saved._id, email: saved.email, fullName: saved.fullName, createdAt: saved.createdAt };
-    return NextResponse.json({ user }, { status: 201 });
+    const userData = { 
+      id: saved._id.toString(), 
+      email: saved.email, 
+      fullName: saved.fullName 
+    };
+    
+    const response = NextResponse.json({ user: userData }, { status: 201 });
+    
+    // Set cookie to auto-login user after signup
+    response.cookies.set('user-session', JSON.stringify(userData), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    });
+
+    return response;
   } catch (err: any) {
     console.error('Signup error:', err);
     // Handle duplicate key error from Mongo

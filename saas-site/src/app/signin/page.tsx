@@ -1,15 +1,44 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { FormEvent } from 'react';
+import { FormEvent, useState } from 'react';
 
 export default function SignInPage() {
   const router = useRouter();
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Redirect to dashboard (authentication coming soon)
-    router.push('/dashboard');
+    setError('');
+    setLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    try {
+      const res = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || 'Sign in failed');
+        setLoading(false);
+        return;
+      }
+
+      // Success - redirect to dashboard
+      router.push('/dashboard');
+      router.refresh();
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -29,6 +58,8 @@ export default function SignInPage() {
               <input
                 type="email"
                 id="email"
+                name="email"
+                required
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
                 placeholder="you@example.com"
               />
@@ -41,16 +72,23 @@ export default function SignInPage() {
               <input
                 type="password"
                 id="password"
+                name="password"
+                required
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
                 placeholder="••••••••"
               />
             </div>
 
+            {error && (
+              <p className="text-sm text-red-600">{error}</p>
+            )}
+
             <button
               type="submit"
-              className="w-full rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+              disabled={loading}
+              className="w-full rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
-              Sign in
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
 
