@@ -5,7 +5,7 @@ import CondoManager from '../../../../../models/condo-manager';
 import CondoManagerInvite from '../../../../../models/condo-manager-invite';
 import User from '../../../../../models/user';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('user-session');
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     const session = JSON.parse(sessionCookie.value);
-    const condoId = params.id;
+    const { id: condoId } = await params;
 
     await connectToMongo();
 
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('user-session');
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     const session = JSON.parse(sessionCookie.value);
-    const condoId = params.id;
+    const { id: condoId } = await params;
 
     await connectToMongo();
 

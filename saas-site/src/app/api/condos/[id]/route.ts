@@ -4,7 +4,7 @@ import { connectToMongo } from '../../../../lib/mongoose';
 import Condo from '../../../../models/condo';
 import CondoManager from '../../../../models/condo-manager';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('user-session');
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     const session = JSON.parse(sessionCookie.value);
-    const condoId = params.id;
+    const { id: condoId } = await params;
 
     await connectToMongo();
 
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('user-session');
@@ -51,7 +51,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     const session = JSON.parse(sessionCookie.value);
-    const condoId = params.id;
+    const { id: condoId } = await params;
 
     await connectToMongo();
 
