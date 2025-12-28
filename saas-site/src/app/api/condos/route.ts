@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { connectToMongo } from '../../../lib/mongoose';
 import Condo from '../../../models/condo';
 import CondoManager from '../../../models/condo-manager';
-import Fraction from '../../../models/fraction';
+import CondoOwner from '../../../models/condo-owner';
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,15 +23,11 @@ export async function GET(req: NextRequest) {
       .sort({ createdAt: -1 })
       .lean() as any[];
 
-    // Get condos where user owns a fraction
-    const fractions = await Fraction.find({ 
-      ownerUserId: session.id,
-      ownerAccepted: true 
-    }).lean() as any[];
-    
-    const fractionCondoIds = fractions.map((f: any) => f.condoId);
-    const fractionCondos = fractionCondoIds.length > 0
-      ? await Condo.find({ _id: { $in: fractionCondoIds } }).lean() as any[]
+    // Get condos where user is an owner via CondoOwner table
+    const ownerRelationships = await CondoOwner.find({ userId: session.id }).lean() as any[];
+    const ownerCondoIds = ownerRelationships.map((o: any) => o.condoId);
+    const ownerCondos = ownerCondoIds.length > 0
+      ? await Condo.find({ _id: { $in: ownerCondoIds } }).lean() as any[]
       : [];
 
     // Combine and deduplicate condos
@@ -46,7 +42,7 @@ export async function GET(req: NextRequest) {
       });
     });
     
-    fractionCondos.forEach((condo: any) => {
+    ownerCondos.forEach((condo: any) => {
       const condoId = condo._id.toString();
       if (allCondosMap.has(condoId)) {
         // User is both manager and owner

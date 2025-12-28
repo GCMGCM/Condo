@@ -10,6 +10,7 @@ const collections = [
   'users',
   'condos',
   'condomanagers',
+  'condoowners',
   'fractions',
   'condotypes',
   'condomanagerinvites',

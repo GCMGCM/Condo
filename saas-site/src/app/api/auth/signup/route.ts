@@ -6,6 +6,7 @@ import UserLog from '../../../../models/user-log';
 import AdminLog from '../../../../models/admin-log';
 import SupportInvite from '../../../../models/support-invite';
 import Fraction from '../../../../models/fraction';
+import CondoOwner from '../../../../models/condo-owner';
 
 export async function POST(req: NextRequest) {
   try {
@@ -68,20 +69,46 @@ export async function POST(req: NextRequest) {
     }
 
     // Auto-link any fractions that have been invited with this email
-    await Fraction.updateMany(
-      { 
-        ownerEmail: email,
-        ownerInvited: true,
-        ownerAccepted: false
-      },
-      {
-        $set: {
-          ownerAccepted: true,
-          ownerUserId: saved._id,
-          updatedAt: new Date()
+    const fractionsToLink = await Fraction.find({
+      ownerEmail: email,
+      ownerInvited: true,
+      ownerAccepted: false
+    }).lean();
+
+    if (fractionsToLink.length > 0) {
+      // Update all fractions
+      await Fraction.updateMany(
+        { 
+          ownerEmail: email,
+          ownerInvited: true,
+          ownerAccepted: false
+        },
+        {
+          $set: {
+            ownerAccepted: true,
+            ownerUserId: saved._id,
+            updatedAt: new Date()
+          }
         }
+      );
+
+      // Get unique condo IDs
+      const condoIds = [...new Set(fractionsToLink.map((f: any) => f.condoId.toString()))];
+      
+      // Create CondoOwner records for each unique condo
+      for (const condoId of condoIds) {
+        await CondoOwner.findOneAndUpdate(
+          { condoId, userId: saved._id },
+          {
+            condoId,
+            userId: saved._id,
+            invitedBy: fractionsToLink.find((f: any) => f.condoId.toString() === condoId)?.updatedBy || saved._id,
+            createdAt: new Date()
+          },
+          { upsert: true }
+        );
       }
-    );
+    }
 
     // Log the signup action (admin and support team use AdminLog)
     const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';

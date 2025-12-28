@@ -4,6 +4,7 @@ import { connectToMongo } from '../../../../../../../lib/mongoose';
 import CondoManager from '../../../../../../../models/condo-manager';
 import Fraction from '../../../../../../../models/fraction';
 import User from '../../../../../../../models/user';
+import CondoOwner from '../../../../../../../models/condo-owner';
 
 export async function POST(
   req: NextRequest,
@@ -46,6 +47,18 @@ export async function POST(
       fraction.ownerInvited = true;
       fraction.ownerAccepted = true;
       fraction.ownerUserId = existingUser._id;
+      
+      // Create CondoOwner relationship (if not already exists)
+      await CondoOwner.findOneAndUpdate(
+        { condoId, userId: existingUser._id },
+        { 
+          condoId,
+          userId: existingUser._id,
+          invitedBy: session.id,
+          createdAt: new Date()
+        },
+        { upsert: true }
+      );
     } else {
       // User doesn't exist - just mark as invited (they need to sign up)
       fraction.ownerInvited = true;

@@ -7,7 +7,9 @@ import AdminLog from '../../../../models/admin-log';
 import Condo from '../../../../models/condo';
 import CondoManager from '../../../../models/condo-manager';
 import CondoManagerInvite from '../../../../models/condo-manager-invite';
+import CondoOwner from '../../../../models/condo-owner';
 import SupportInvite from '../../../../models/support-invite';
+import Fraction from '../../../../models/fraction';
 
 const ADMIN_EMAIL = 'marcondes.gustavo@gmail.com';
 
@@ -44,6 +46,8 @@ export async function POST(req: NextRequest) {
       condosDeleted: 0,
       condoManagersDeleted: 0,
       condoManagerInvitesDeleted: 0,
+      condoOwnersDeleted: 0,
+      fractionsDeleted: 0,
       supportInvitesDeleted: 0,
     };
 
@@ -74,6 +78,14 @@ export async function POST(req: NextRequest) {
     // Delete all condo manager invites
     const managerInvitesResult = await CondoManagerInvite.deleteMany({});
     results.condoManagerInvitesDeleted = managerInvitesResult.deletedCount || 0;
+
+    // Delete all condo owners
+    const condoOwnersResult = await CondoOwner.deleteMany({});
+    results.condoOwnersDeleted = condoOwnersResult.deletedCount || 0;
+
+    // Delete all fractions
+    const fractionsResult = await Fraction.deleteMany({});
+    results.fractionsDeleted = fractionsResult.deletedCount || 0;
 
     // Delete all support invites
     const supportInvitesResult = await SupportInvite.deleteMany({});

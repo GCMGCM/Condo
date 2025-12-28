@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { connectToMongo } from '../../../../lib/mongoose';
 import Condo from '../../../../models/condo';
 import CondoManager from '../../../../models/condo-manager';
-import Fraction from '../../../../models/fraction';
+import CondoOwner from '../../../../models/condo-owner';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -35,11 +35,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ message: 'Condo not found' }, { status: 404 });
     }
 
-    // Check if user also owns a fraction
-    const isOwner = await Fraction.findOne({
+    // Check if user also owns a fraction via CondoOwner table
+    const isOwner = await CondoOwner.findOne({
       condoId,
-      ownerUserId: session.id,
-      ownerAccepted: true
+      userId: session.id
     }).lean();
 
     return NextResponse.json({ 
