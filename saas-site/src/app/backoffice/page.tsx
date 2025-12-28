@@ -299,7 +299,15 @@ export default function BackofficePage() {
                 {logs.map((log) => (
                   <tr key={log._id}>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(log.timestamp).toLocaleString()}
+                      {new Date(log.timestamp).toLocaleString('en-GB', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false 
+                      })}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                       {log.ipAddress}
