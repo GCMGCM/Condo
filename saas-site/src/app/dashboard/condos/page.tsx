@@ -9,6 +9,7 @@ interface Condo {
   avatar: string;
   lastActivityAt: string;
   createdAt: string;
+  userRole?: string; // 'manager' or 'owner'
 }
 
 export default function CondosPage() {
@@ -288,7 +289,12 @@ export default function CondosPage() {
               <div
                 key={condo._id}
                 className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => router.push(`/dashboard/condos/${condo._id}`)}
+                onClick={() => {
+                  const baseUrl = (condo as any).userRole === 'owner' 
+                    ? `/dashboard/cockpit/${condo._id}`
+                    : `/dashboard/condos/${condo._id}`;
+                  router.push(baseUrl);
+                }}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold">

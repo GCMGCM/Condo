@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { connectToMongo } from '../../../lib/mongoose';
 import Condo from '../../../models/condo';
 import CondoManager from '../../../models/condo-manager';
+import Fraction from '../../../models/fraction';
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,10 +18,43 @@ export async function GET(req: NextRequest) {
     
     await connectToMongo();
 
-    // Get all condos for this user
-    const condos = await Condo.find({ userId: session.id })
+    // Get condos where user is the creator
+    const ownedCondos = await Condo.find({ userId: session.id })
       .sort({ createdAt: -1 })
       .lean();
+
+    // Get condos where user owns a fraction
+    const fractions = await Fraction.find({ 
+      ownerUserId: session.id,
+      ownerAccepted: true 
+    }).lean();
+    
+    const fractionCondoIds = fractions.map(f => f.condoId);
+    const fractionCondos = fractionCondoIds.length > 0
+      ? await Condo.find({ _id: { $in: fractionCondoIds } }).lean()
+      : [];
+
+    // Combine and deduplicate condos
+    const allCondosMap = new Map();
+    
+    ownedCondos.forEach(condo => {
+      allCondosMap.set(condo._id.toString(), {
+        ...condo,
+        userRole: 'manager' // User is a manager
+      });
+    });
+    
+    fractionCondos.forEach(condo => {
+      const condoId = condo._id.toString();
+      if (!allCondosMap.has(condoId)) {
+        allCondosMap.set(condoId, {
+          ...condo,
+          userRole: 'owner' // User is a fraction owner
+        });
+      }
+    });
+
+    const condos = Array.from(allCondosMap.values());
 
     return NextResponse.json({ condos }, { status: 200 });
   } catch (err) {
