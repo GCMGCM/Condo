@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { connectToMongo } from '../../../../../lib/mongoose';
 import CondoManager from '../../../../../models/condo-manager';
-import CondoManagerInvite from '../../../../../models/condo-manager-invite';
-import User from '../../../../../models/user';
+import Fraction from '../../../../../models/fraction';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -25,19 +24,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ message: 'Not authorized' }, { status: 403 });
     }
 
-    const managers = await CondoManager.find({ condoId })
-      .populate('userId', 'fullName email')
-      .sort({ createdAt: 1 })
+    const fractions = await Fraction.find({ condoId })
+      .sort({ identifier: 1 })
       .lean();
 
-    const pendingInvites = await CondoManagerInvite.find({ condoId, used: false })
-      .populate('invitedBy', 'fullName')
-      .sort({ createdAt: 1 })
-      .lean();
-
-    return NextResponse.json({ managers, pendingInvites }, { status: 200 });
+    return NextResponse.json({ fractions }, { status: 200 });
   } catch (err) {
-    console.error('Get managers error:', err);
+    console.error('Get fractions error:', err);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
@@ -63,46 +56,52 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     const body = await req.json();
-    const { email } = body;
+    const {
+      identifier,
+      ownerFullName,
+      ownerEmail,
+      ownerCountryMobile,
+      ownerMobile,
+      ownershipShare,
+      addressLine1,
+      addressLine2,
+      postalCode,
+      country,
+    } = body;
 
-    if (!email) {
-      return NextResponse.json({ message: 'Email is required' }, { status: 400 });
+    if (!identifier || !ownerFullName || !ownerEmail) {
+      return NextResponse.json({ 
+        message: 'Identifier, owner name, and owner email are required' 
+      }, { status: 400 });
     }
 
-    // Check if user exists
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const fraction = new Fraction({
+      condoId,
+      identifier: identifier.trim(),
+      ownerFullName: ownerFullName.trim(),
+      ownerEmail: ownerEmail.trim().toLowerCase(),
+      ownerCountryMobile: ownerCountryMobile?.trim() || '',
+      ownerMobile: ownerMobile?.trim() || '',
+      ownershipShare: ownershipShare || 0,
+      addressLine1: addressLine1?.trim() || '',
+      addressLine2: addressLine2?.trim() || '',
+      postalCode: postalCode?.trim() || '',
+      country: country?.trim() || '',
+    });
 
-    if (user) {
-      // User exists - add directly
-      const existing = await CondoManager.findOne({ condoId, userId: user._id });
-      if (existing) {
-        return NextResponse.json({ message: 'User is already a manager' }, { status: 409 });
-      }
+    await fraction.save();
 
-      const manager = new CondoManager({
-        condoId,
-        userId: user._id,
-        invitedBy: session.id,
-      });
-      await manager.save();
-
-      return NextResponse.json({ message: 'Manager added' }, { status: 201 });
-    } else {
-      // User doesn't exist - create invite
-      const invite = new CondoManagerInvite({
-        condoId,
-        email: email.toLowerCase().trim(),
-        invitedBy: session.id,
-      });
-      await invite.save();
-
-      return NextResponse.json({ message: 'Invite sent. User will become manager after signup.' }, { status: 201 });
-    }
+    return NextResponse.json({ 
+      message: 'Fraction created successfully',
+      fraction 
+    }, { status: 201 });
   } catch (err: any) {
     if (err?.code === 11000) {
-      return NextResponse.json({ message: 'Invite already sent' }, { status: 409 });
+      return NextResponse.json({ 
+        message: 'A fraction with this identifier already exists in this condo' 
+      }, { status: 409 });
     }
-    console.error('Invite manager error:', err);
+    console.error('Create fraction error:', err);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

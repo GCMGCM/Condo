@@ -13,10 +13,20 @@ interface Manager {
   createdAt: string;
 }
 
+interface PendingInvite {
+  _id: string;
+  email: string;
+  createdAt: string;
+  invitedBy: {
+    fullName: string;
+  };
+}
+
 export default function CondoManagersPage() {
   const params = useParams();
   const condoId = params.id as string;
   const [managers, setManagers] = useState<Manager[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [email, setEmail] = useState('');
@@ -33,6 +43,9 @@ export default function CondoManagersPage() {
       .then(data => {
         if (data.managers) {
           setManagers(data.managers);
+        }
+        if (data.pendingInvites) {
+          setPendingInvites(data.pendingInvites);
         }
         setLoading(false);
       })
@@ -124,27 +137,67 @@ export default function CondoManagersPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      {/* Active Managers */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
+        <div className="p-3 bg-gray-50 border-b border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900">Active Managers ({managers.length})</h3>
+        </div>
         {managers.length === 0 ? (
-          <p className="p-6 text-sm text-gray-500">No managers yet</p>
+          <p className="p-6 text-sm text-gray-500">No active managers</p>
         ) : (
           <div className="divide-y divide-gray-200">
             {managers.map((manager) => (
               <div key={manager._id} className="p-4 hover:bg-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
-                    {manager.userId.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+                      {manager.userId.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{manager.userId.fullName}</p>
+                      <p className="text-xs text-gray-500">{manager.userId.email}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{manager.userId.fullName}</p>
-                    <p className="text-xs text-gray-500">{manager.userId.email}</p>
-                  </div>
+                  <span className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
+                    Active
+                  </span>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Pending Invitations */}
+      {pendingInvites.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="p-3 bg-gray-50 border-b border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900">Pending Invitations ({pendingInvites.length})</h3>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {pendingInvites.map((invite) => (
+              <div key={invite._id} className="p-4 hover:bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm font-medium">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{invite.email}</p>
+                      <p className="text-xs text-gray-500">Invited by {invite.invitedBy.fullName}</p>
+                    </div>
+                  </div>
+                  <span className="px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full">
+                    Pending
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
