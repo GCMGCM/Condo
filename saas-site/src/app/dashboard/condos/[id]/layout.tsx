@@ -16,6 +16,7 @@ export default function CondoDetailLayout({ children }: { children: React.ReactN
   const [condo, setCondo] = useState<Condo | null>(null);
   const [loading, setLoading] = useState(true);
   const [isManager, setIsManager] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     // Fetch condo details
@@ -25,6 +26,7 @@ export default function CondoDetailLayout({ children }: { children: React.ReactN
         if (data.condo) {
           setCondo(data.condo);
           setIsManager(data.isManager || false);
+          setIsOwner(data.isOwner || false);
         } else {
           router.push('/dashboard/condos');
         }
@@ -97,6 +99,14 @@ export default function CondoDetailLayout({ children }: { children: React.ReactN
           >
             Fractions
           </Link>
+          {isOwner && (
+            <Link
+              href={`/dashboard/cockpit/${condoId}`}
+              className="pb-3 border-b-2 border-transparent hover:border-gray-300 text-sm font-medium text-blue-600 hover:text-blue-900"
+            >
+              → Cockpit View
+            </Link>
+          )}
         </nav>
       </div>
 

@@ -40,16 +40,28 @@ export async function GET(req: NextRequest) {
     ownedCondos.forEach((condo: any) => {
       allCondosMap.set(condo._id.toString(), {
         ...condo,
-        userRole: 'manager' // User is a manager
+        userRole: 'manager', // User is a manager
+        isManager: true,
+        isOwner: false
       });
     });
     
     fractionCondos.forEach((condo: any) => {
       const condoId = condo._id.toString();
-      if (!allCondosMap.has(condoId)) {
+      if (allCondosMap.has(condoId)) {
+        // User is both manager and owner
+        const existing = allCondosMap.get(condoId);
+        allCondosMap.set(condoId, {
+          ...existing,
+          isOwner: true // Also a fraction owner
+        });
+      } else {
+        // User is only owner
         allCondosMap.set(condoId, {
           ...condo,
-          userRole: 'owner' // User is a fraction owner
+          userRole: 'owner',
+          isManager: false,
+          isOwner: true
         });
       }
     });

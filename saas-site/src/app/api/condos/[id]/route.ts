@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { connectToMongo } from '../../../../lib/mongoose';
 import Condo from '../../../../models/condo';
 import CondoManager from '../../../../models/condo-manager';
+import Fraction from '../../../../models/fraction';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -34,7 +35,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ message: 'Condo not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ condo, isManager: true }, { status: 200 });
+    // Check if user also owns a fraction
+    const isOwner = await Fraction.findOne({
+      condoId,
+      ownerUserId: session.id,
+      ownerAccepted: true
+    }).lean();
+
+    return NextResponse.json({ 
+      condo, 
+      isManager: true,
+      isOwner: !!isOwner 
+    }, { status: 200 });
   } catch (err) {
     console.error('Get condo error:', err);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
