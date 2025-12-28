@@ -34,13 +34,13 @@ export default function UsersPage() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-4">Users</h1>
       <p className="text-gray-600 mb-6">
-        User activity logs - Last 50 entries (signup, signin, signout)
+        Regular user activity logs - Last 50 entries (excludes admin and support team)
       </p>
       
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">User Activity Logs</h2>
-          <p className="text-sm text-gray-500 mt-1">Showing last 50 user activities (excludes admin/support)</p>
+          <h2 className="text-lg font-semibold text-gray-900">Regular User Activity Logs</h2>
+          <p className="text-sm text-gray-500 mt-1">Showing last 50 activities from regular users only (admin and support team activities are in AdminLog)</p>
         </div>
 
         {loading ? (
