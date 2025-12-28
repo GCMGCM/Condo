@@ -21,30 +21,30 @@ export async function GET(req: NextRequest) {
     // Get condos where user is the creator
     const ownedCondos = await Condo.find({ userId: session.id })
       .sort({ createdAt: -1 })
-      .lean();
+      .lean() as any[];
 
     // Get condos where user owns a fraction
     const fractions = await Fraction.find({ 
       ownerUserId: session.id,
       ownerAccepted: true 
-    }).lean();
+    }).lean() as any[];
     
-    const fractionCondoIds = fractions.map(f => f.condoId);
+    const fractionCondoIds = fractions.map((f: any) => f.condoId);
     const fractionCondos = fractionCondoIds.length > 0
-      ? await Condo.find({ _id: { $in: fractionCondoIds } }).lean()
+      ? await Condo.find({ _id: { $in: fractionCondoIds } }).lean() as any[]
       : [];
 
     // Combine and deduplicate condos
     const allCondosMap = new Map();
     
-    ownedCondos.forEach(condo => {
+    ownedCondos.forEach((condo: any) => {
       allCondosMap.set(condo._id.toString(), {
         ...condo,
         userRole: 'manager' // User is a manager
       });
     });
     
-    fractionCondos.forEach(condo => {
+    fractionCondos.forEach((condo: any) => {
       const condoId = condo._id.toString();
       if (!allCondosMap.has(condoId)) {
         allCondosMap.set(condoId, {
