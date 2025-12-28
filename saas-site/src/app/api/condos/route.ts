@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { connectToMongo } from '../../../lib/mongoose';
 import Condo from '../../../models/condo';
+import CondoManager from '../../../models/condo-manager';
 
 export async function GET(req: NextRequest) {
   try {
@@ -59,6 +60,14 @@ export async function POST(req: NextRequest) {
     });
 
     await condo.save();
+
+    // Add creator as condo manager
+    const manager = new CondoManager({
+      condoId: condo._id,
+      userId: session.id,
+      invitedBy: session.id,
+    });
+    await manager.save();
 
     return NextResponse.json({ 
       message: 'Condo created successfully',
