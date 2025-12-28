@@ -14,6 +14,9 @@ const FractionSchema = new Schema({
   addressLine2: { type: String, default: '' },
   postalCode: { type: String, default: '' },
   country: { type: String, default: '' },
+  ownerInvited: { type: Boolean, default: false },
+  ownerAccepted: { type: Boolean, default: false },
+  ownerUserId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
   createdAt: { type: Date, default: () => new Date() },
   updatedAt: { type: Date, default: () => new Date() },
 });

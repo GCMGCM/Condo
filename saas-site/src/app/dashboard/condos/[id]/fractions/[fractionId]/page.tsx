@@ -1,32 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 
-interface Fraction {
-  _id: string;
-  identifier: string;
-  ownerFullName: string;
-  ownerEmail: string;
-  ownershipShare: number;
-  addressLine2: string;
-}
-
-interface Condo {
-  addressLine1: string;
-  addressLine2: string;
-  postalCode: string;
-  country: string;
-}
-
-export default function CondoFractionsPage() {
+export default function FractionDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const condoId = params.id as string;
-  const [fractions, setFractions] = useState<Fraction[]>([]);
-  const [condo, setCondo] = useState<Condo | null>(null);
+  const fractionId = params.fractionId as string;
+
+  const [fraction, setFraction] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [inviting, setInviting] = useState(false);
   const [message, setMessage] = useState('');
   const [formData, setFormData] = useState({
     identifier: '',
@@ -42,78 +29,57 @@ export default function CondoFractionsPage() {
   });
 
   useEffect(() => {
-    loadFractions();
-    loadCondo();
+    loadFraction();
   }, []);
 
-  const loadCondo = () => {
-    fetch(`/api/condos/${condoId}`)
+  const loadFraction = () => {
+    fetch(`/api/condos/${condoId}/fractions/${fractionId}`)
       .then(res => res.json())
       .then(data => {
-        if (data.condo) {
-          setCondo(data.condo);
-          // Set default address from condo
-          setFormData(prev => ({
-            ...prev,
-            addressLine1: data.condo.addressLine1 || '',
-            postalCode: data.condo.postalCode || '',
-            country: data.condo.country || '',
-          }));
-        }
-      });
-  };
-
-  const loadFractions = () => {
-    fetch(`/api/condos/${condoId}/fractions`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.fractions) {
-          setFractions(data.fractions);
+        if (data.fraction) {
+          setFraction(data.fraction);
+          setFormData({
+            identifier: data.fraction.identifier || '',
+            ownerFullName: data.fraction.ownerFullName || '',
+            ownerEmail: data.fraction.ownerEmail || '',
+            ownerCountryMobile: data.fraction.ownerCountryMobile || '',
+            ownerMobile: data.fraction.ownerMobile || '',
+            ownershipShare: data.fraction.ownershipShare || 0,
+            addressLine1: data.fraction.addressLine1 || '',
+            addressLine2: data.fraction.addressLine2 || '',
+            postalCode: data.fraction.postalCode || '',
+            country: data.fraction.country || '',
+          });
         }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setLoading(false);
+        router.push(`/dashboard/condos/${condoId}/fractions`);
+      });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setMessage('');
 
-    // Auto-populate address2 with identifier + condo address2
-    const finalData = {
-      ...formData,
-      addressLine2: formData.identifier + (condo?.addressLine2 ? `, ${condo.addressLine2}` : ''),
-    };
-
     try {
-      const res = await fetch(`/api/condos/${condoId}/fractions`, {
-        method: 'POST',
+      const res = await fetch(`/api/condos/${condoId}/fractions/${fractionId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalData),
+        body: JSON.stringify(formData),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        setMessage('Fraction created successfully!');
-        setFormData({
-          identifier: '',
-          ownerFullName: '',
-          ownerEmail: '',
-          ownerCountryMobile: '',
-          ownerMobile: '',
-          ownershipShare: 0,
-          addressLine1: condo?.addressLine1 || '',
-          addressLine2: '',
-          postalCode: condo?.postalCode || '',
-          country: condo?.country || '',
-        });
-        setShowForm(false);
-        loadFractions();
+        setMessage('Fraction updated successfully!');
+        setEditing(false);
+        loadFraction();
         setTimeout(() => setMessage(''), 3000);
       } else {
-        setMessage(data.message || 'Failed to create fraction');
+        setMessage(data.message || 'Update failed');
       }
     } catch (err) {
       setMessage('An error occurred');
@@ -122,23 +88,76 @@ export default function CondoFractionsPage() {
     }
   };
 
+  const handleInviteOwner = async () => {
+    setInviting(true);
+    setMessage('');
+
+    try {
+      const res = await fetch(`/api/condos/${condoId}/fractions/${fractionId}/invite-owner`, {
+        method: 'POST',
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage('Owner invited successfully!');
+        loadFraction();
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage(data.message || 'Invite failed');
+      }
+    } catch (err) {
+      setMessage('An error occurred');
+    } finally {
+      setInviting(false);
+    }
+  };
+
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="p-8">Loading...</div>;
   }
+
+  if (!fraction) {
+    return null;
+  }
+
+  const getOwnerStatus = () => {
+    if (fraction.ownerAccepted) {
+      return { text: 'Accepted', color: 'bg-green-100 text-green-800' };
+    }
+    if (fraction.ownerInvited) {
+      return { text: 'Invited - Pending', color: 'bg-yellow-100 text-yellow-800' };
+    }
+    return { text: 'Not Invited', color: 'bg-gray-100 text-gray-800' };
+  };
+
+  const ownerStatus = getOwnerStatus();
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <button
+        onClick={() => router.push(`/dashboard/condos/${condoId}/fractions`)}
+        className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
+      >
+        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Fractions
+      </button>
+
+      <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Fractions</h2>
-          <p className="text-sm text-gray-600 mt-1">Manage condo fractions and units</p>
+          <h1 className="text-2xl font-bold text-gray-900">{fraction.identifier}</h1>
+          <p className="text-gray-600 mt-1">Fraction Details</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
-        >
-          + Add Fraction
-        </button>
+        {!editing && (
+          <button
+            onClick={() => setEditing(true)}
+            className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+          >
+            Edit Fraction
+          </button>
+        )}
       </div>
 
       {message && (
@@ -147,10 +166,10 @@ export default function CondoFractionsPage() {
         </div>
       )}
 
-      {showForm && (
-        <div className="mb-6 bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4">Add New Fraction</h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
+      {editing ? (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Edit Fraction</h2>
+          <form onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -161,7 +180,6 @@ export default function CondoFractionsPage() {
                   value={formData.identifier}
                   onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
-                  placeholder="e.g., Apt 101, Unit 5B"
                   required
                 />
               </div>
@@ -233,12 +251,6 @@ export default function CondoFractionsPage() {
                 />
               </div>
 
-              <div className="md:col-span-2">
-                <p className="text-xs text-gray-500 mb-2">
-                  Address defaults to condo address. Identifier will be added to Address Line 2.
-                </p>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Address Line 1
@@ -247,6 +259,18 @@ export default function CondoFractionsPage() {
                   type="text"
                   value={formData.addressLine1}
                   onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address Line 2
+                </label>
+                <input
+                  type="text"
+                  value={formData.addressLine2}
+                  onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
                 />
               </div>
@@ -282,11 +306,11 @@ export default function CondoFractionsPage() {
                 disabled={saving}
                 className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
               >
-                {saving ? 'Creating...' : 'Create Fraction'}
+                {saving ? 'Saving...' : 'Save Changes'}
               </button>
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={() => setEditing(false)}
                 className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
               >
                 Cancel
@@ -294,41 +318,62 @@ export default function CondoFractionsPage() {
             </div>
           </form>
         </div>
-      )}
-
-      {fractions.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-          <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
-          <p className="text-gray-500">No fractions yet. Add your first fraction to get started!</p>
-        </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {fractions.map((fraction) => (
-            <div
-              key={fraction._id}
-              onClick={() => window.location.href = `/dashboard/condos/${condoId}/fractions/${fraction._id}`}
-              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
-            >
-              <div className="mb-4">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-white text-lg font-bold mb-3">
-                  {fraction.identifier.substring(0, 2).toUpperCase()}
-                </div>
-                <h3 className="font-semibold text-gray-900 text-lg mb-1">{fraction.identifier}</h3>
-                <p className="text-sm text-gray-600">{fraction.ownerFullName}</p>
+        <div className="grid gap-6">
+          {/* Owner Information */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Owner Information</h2>
+              <span className={`px-3 py-1 text-xs font-medium rounded-full ${ownerStatus.color}`}>
+                {ownerStatus.text}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Owner Name</label>
+                <p className="mt-1 text-sm text-gray-900">{fraction.ownerFullName}</p>
               </div>
-              <div className="space-y-1 text-xs text-gray-500">
-                <p>{fraction.ownerEmail}</p>
-                {fraction.addressLine2 && (
-                  <p className="text-gray-600">{fraction.addressLine2}</p>
-                )}
-                {fraction.ownershipShare > 0 && (
-                  <p className="font-medium text-gray-700">Share: {fraction.ownershipShare}%</p>
-                )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <div className="mt-1 flex items-center gap-2">
+                  <p className="text-sm text-gray-900">{fraction.ownerEmail}</p>
+                  {!fraction.ownerInvited && (
+                    <button
+                      onClick={handleInviteOwner}
+                      disabled={inviting}
+                      className="text-xs px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                    >
+                      {inviting ? 'Inviting...' : 'Invite Owner'}
+                    </button>
+                  )}
+                </div>
+              </div>
+              {fraction.ownerCountryMobile && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Mobile</label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {fraction.ownerCountryMobile} {fraction.ownerMobile}
+                  </p>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Ownership Share</label>
+                <p className="mt-1 text-sm text-gray-900">{fraction.ownershipShare}%</p>
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Address Information */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Address</h2>
+            <div className="space-y-2">
+              {fraction.addressLine1 && <p className="text-sm text-gray-900">{fraction.addressLine1}</p>}
+              {fraction.addressLine2 && <p className="text-sm text-gray-900">{fraction.addressLine2}</p>}
+              <p className="text-sm text-gray-900">
+                {fraction.postalCode} {fraction.country}
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>
