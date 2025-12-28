@@ -27,9 +27,9 @@ export async function GET(
       return NextResponse.json({ message: 'Not authorized' }, { status: 403 });
     }
 
-    const fraction = await Fraction.findById(fractionId).lean();
+    const fraction = await Fraction.findById(fractionId).lean() as any;
 
-    if (!fraction || fraction.condoId.toString() !== condoId) {
+    if (!fraction || fraction.condoId?.toString() !== condoId) {
       return NextResponse.json({ message: 'Fraction not found' }, { status: 404 });
     }
 
