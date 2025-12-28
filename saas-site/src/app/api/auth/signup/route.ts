@@ -5,6 +5,7 @@ import User from '../../../../models/user';
 import UserLog from '../../../../models/user-log';
 import AdminLog from '../../../../models/admin-log';
 import SupportInvite from '../../../../models/support-invite';
+import Fraction from '../../../../models/fraction';
 
 export async function POST(req: NextRequest) {
   try {
@@ -65,6 +66,22 @@ export async function POST(req: NextRequest) {
       invite.used = true;
       await invite.save();
     }
+
+    // Auto-link any fractions that have been invited with this email
+    await Fraction.updateMany(
+      { 
+        ownerEmail: email,
+        ownerInvited: true,
+        ownerAccepted: false
+      },
+      {
+        $set: {
+          ownerAccepted: true,
+          ownerUserId: saved._id,
+          updatedAt: new Date()
+        }
+      }
+    );
 
     // Log the signup action (admin and support team use AdminLog)
     const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
