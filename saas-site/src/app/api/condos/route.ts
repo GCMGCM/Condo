@@ -39,16 +39,22 @@ export async function POST(req: NextRequest) {
 
     const session = JSON.parse(sessionCookie.value);
     const body = await req.json();
-    const { name } = body;
+    const { name, type, addressLine1, addressLine2, postalCode, country, condoEmail } = body;
 
-    if (!name) {
-      return NextResponse.json({ message: 'Condo name is required' }, { status: 400 });
+    if (!name || !type) {
+      return NextResponse.json({ message: 'Condo name and type are required' }, { status: 400 });
     }
 
     await connectToMongo();
 
     const condo = new Condo({
       name: name.trim(),
+      type: type.trim(),
+      addressLine1: addressLine1?.trim() || '',
+      addressLine2: addressLine2?.trim() || '',
+      postalCode: postalCode?.trim() || '',
+      country: country?.trim() || '',
+      condoEmail: condoEmail?.trim() || '',
       userId: session.id,
     });
 
