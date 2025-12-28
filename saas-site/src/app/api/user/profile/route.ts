@@ -48,6 +48,7 @@ export async function PUT(req: NextRequest) {
 
     // Update allowed fields
     if (body.fullName) user.fullName = body.fullName.trim();
+    if (body.fiscalId !== undefined) user.fiscalId = body.fiscalId.trim();
     if (body.mobileCountry !== undefined) user.mobileCountry = body.mobileCountry.trim();
     if (body.mobileNumber !== undefined) user.mobileNumber = body.mobileNumber.trim();
     if (body.email && body.email !== user.email) {
